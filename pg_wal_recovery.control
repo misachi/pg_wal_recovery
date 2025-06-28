@@ -1,0 +1,5 @@
+# pg_wal_recovery extension
+comment = 'Read WAL and Perform a "manual" Redo'
+default_version = '1.0'
+module_pathname = '$libdir/pg_wal_recovery'
+relocatable = true

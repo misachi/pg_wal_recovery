@@ -1,5 +1,0 @@
-# pg_recovery extension
-comment = 'Read WAL and Perform a Redo'
-default_version = '1.0'
-module_pathname = '$libdir/pg_recovery'
-relocatable = true

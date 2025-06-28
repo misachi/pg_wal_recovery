@@ -1,6 +1,6 @@
-# pg_recovery
+# pg_wal_recovery
 
-`pg_recovery` is an educational PostgreSQL extension for database recovery, focusing on restoring databases from Write-Ahead Logs (WAL) and supporting point-in-time recovery.
+`pg_wal_recovery` is an educational PostgreSQL extension for database recovery, focusing on restoring databases from Write-Ahead Logs (WAL) and supporting point-in-time recovery.
 
 ## Features
 
@@ -19,8 +19,8 @@
 Clone the repository and build the extension:
 
 ```bash
-git clone https://github.com/misachi/pg_recovery.git
-cd pg_recovery
+git clone https://github.com/misachi/pg_wal_recovery.git
+cd pg_wal_recovery
 make
 make install
 ```
@@ -28,7 +28,7 @@ make install
 Then, enable the extension in your database:
 
 ```sql
-CREATE EXTENSION pg_recovery;
+CREATE EXTENSION pg_wal_recovery;
 ```
 
 ## Usage
@@ -41,6 +41,17 @@ List WAL records available for recovery from a specified directory:
 SELECT * FROM wal_list_records('/tmp');
 ```
 
+Example
+```
+postgres=# select * from wal_list_records('/tmp');
+WARNING:  invalid record length at 15/ED40DC90: expected at least 24, got 0
+      wal_file_name       |  wal_type  | wal_record
+--------------------------+------------+-------------
+ 0000000100000015000000ED | HOT_UPDATE | 15/ED40DC20
+ 0000000100000015000000ED | COMMIT     | 15/ED40DC68
+(2 rows)
+```
+
 ### Replay WAL Records
 
 Replay WAL records to restore the database:
@@ -49,7 +60,19 @@ Replay WAL records to restore the database:
 SELECT * FROM wal_recover('/tmp');
 ```
 
-### Point-in-Time Recovery
+It returns the last record replayed
+
+Example
+```
+postgres=# select * from wal_recover('/tmp');
+WARNING:  invalid record length at 15/ED40DC90: expected at least 24, got 0
+ wal_type | wal_record
+----------+------------
+          |
+(1 row)
+```
+
+### Point-in-Time Recovery(WIP)
 
 To recover to a specific timestamp, use:
 
@@ -69,4 +92,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Disclaimer
 
-This extension is intended for educational purposes. Use with caution on production systems.
+This extension is intended for educational purposes. Don't use in production systems.
