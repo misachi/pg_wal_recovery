@@ -43,13 +43,41 @@ SELECT * FROM wal_list_records('/tmp');
 
 Example
 ```
-postgres=# select * from wal_list_records('/tmp');
-WARNING:  invalid record length at 15/ED40DC90: expected at least 24, got 0
-      wal_file_name       |  wal_type  | wal_record
---------------------------+------------+-------------
- 0000000100000015000000ED | HOT_UPDATE | 15/ED40DC20
- 0000000100000015000000ED | COMMIT     | 15/ED40DC68
-(2 rows)
+postgres=# SELECT * FROM wal_list_records('/tmp');
+WARNING:  invalid record length at 16/20598F0: expected at least 24, got 0
+      wal_file_name       |     wal_type      | wal_record
+--------------------------+-------------------+------------
+ 000000010000001600000002 | CHECKPOINT_REDO   | 16/2057B18
+ 000000010000001600000002 | RUNNING_XACTS     | 16/2057B38
+ 000000010000001600000002 | CHECKPOINT_ONLINE | 16/2057B70
+ 000000010000001600000002 | RUNNING_XACTS     | 16/2057BE8
+ 000000010000001600000002 | FPI_FOR_HINT      | 16/2057C20
+ 000000010000001600000002 | HOT_UPDATE        | 16/2057C90
+ 000000010000001600000002 | HOT_UPDATE        | 16/2057CD8
+ 000000010000001600000002 | HOT_UPDATE        | 16/2057D20
+ ....
+ 000000010000001600000002 | HOT_UPDATE        | 16/20597F0
+ 000000010000001600000002 | HOT_UPDATE        | 16/2059838
+ 000000010000001600000002 | HOT_UPDATE        | 16/2059880
+ 000000010000001600000002 | COMMIT            | 16/20598C8
+(106 rows)
+```
+
+List starting from a specific position in the WAL segment
+```
+postgres=# SELECT * FROM wal_list_records('/tmp', '16/2057C90');
+WARNING:  invalid record length at 16/20598F0: expected at least 24, got 0
+      wal_file_name       |     wal_type      | wal_record
+--------------------------+-------------------+------------
+ 000000010000001600000002 | HOT_UPDATE        | 16/2057C90
+ 000000010000001600000002 | HOT_UPDATE        | 16/2057CD8
+ 000000010000001600000002 | HOT_UPDATE        | 16/2057D20
+ ....
+ 000000010000001600000002 | HOT_UPDATE        | 16/20597F0
+ 000000010000001600000002 | HOT_UPDATE        | 16/2059838
+ 000000010000001600000002 | HOT_UPDATE        | 16/2059880
+ 000000010000001600000002 | COMMIT            | 16/20598C8
+(101 rows)
 ```
 
 ### Replay WAL Records
@@ -65,11 +93,13 @@ It returns the last record replayed
 Example
 ```
 postgres=# select * from wal_recover('/tmp');
-WARNING:  invalid record length at 15/ED40DC90: expected at least 24, got 0
+WARNING:  Page LSN 16/3012920 is greater than record LSN 16/2057CD8 for record at: 16/2057C90
+WARNING:  invalid record length at 16/20598F0: expected at least 24, got 0
  wal_type | wal_record
 ----------+------------
-          |
+ COMMIT   | 16/20598C8
 (1 row)
+
 ```
 
 ### Point-in-Time Recovery(WIP)
