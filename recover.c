@@ -28,7 +28,7 @@ Datum show_records(PG_FUNCTION_ARGS);
 typedef struct XLogPageReadPrivate
 {
     char open_xlog_fd;
-    BlockNumber blks; /* Blocks read */
+    BlockNumber blks; /* WAL Blocks read */
     XLogSegNo seg_no;
     char path_name[MAXPATHLEN];
     TimeLineID replayTLI;
@@ -102,7 +102,7 @@ Datum recover(PG_FUNCTION_ARGS)
     bool nulls[XLOG_FIELD_NUM] = {false};
     XLogRecPtr RecPtr;
     Datum result;
-    bool need_checkpoint;
+    bool need_checkpoint = false;
 
     if (get_call_result_type(fcinfo, NULL, &tupdesc) != TYPEFUNC_COMPOSITE)
         elog(ERROR, "return type must be a row type");
@@ -271,6 +271,8 @@ Datum recover(PG_FUNCTION_ARGS)
     {
         if (!XLogRecPtrIsInvalid(RecPtr))
         {
+            elog(DEBUG1, "Checkpointing at %X/%X", LSN_FORMAT_ARGS(RecPtr));
+            ControlFile->checkPoint = RecPtr;
             ControlFile->checkPointCopy.redo = RecPtr;
             update_controlfile(wal_path, ControlFile, true);
         }
