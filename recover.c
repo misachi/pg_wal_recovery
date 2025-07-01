@@ -299,6 +299,9 @@ Datum show_records(PG_FUNCTION_ARGS)
 #endif
 #define XLOG_FIELD_NUM 3
     text *xlog_dir = PG_GETARG_TEXT_PP(0);
+    text *start_lsn_text = PG_GETARG_TEXT_PP(1);
+    XLogRecPtr start_ptr = InvalidXLogRecPtr;
+    uint32 xlogid, xrecoff;
     ControlFileData *ControlFile = NULL;
     XLogReaderState *xlogreader = NULL;
     XLogPrefetcher *xlogprefetcher = NULL;
@@ -320,6 +323,16 @@ Datum show_records(PG_FUNCTION_ARGS)
     wal_path = text_to_cstring(xlog_dir);
     snprintf(control_path, MAXPATHLEN, "%s/%s", wal_path, XLOG_CONTROL_FILE);
 
+    if (strcmp(text_to_cstring(start_lsn_text), "0/0") != 0)
+    {
+        if (sscanf(text_to_cstring(start_lsn_text), "%X/%X", &xlogid, &xrecoff) != 2)
+            ereport(ERROR, (errcode(ERRCODE_INVALID_PARAMETER_VALUE),
+                            errmsg("Invalid start_lsn value: %s", text_to_cstring(start_lsn_text))));
+        start_ptr = ((uint64)xlogid << 32) | xrecoff;
+    }
+    else
+        start_ptr = InvalidXLogRecPtr;
+
     fd = BasicOpenFile(control_path, O_RDWR | PG_BINARY);
     if (fd < 0)
     {
@@ -337,7 +350,6 @@ Datum show_records(PG_FUNCTION_ARGS)
     rc = read(fd, ControlFile, sizeof(ControlFileData));
     if (rc != sizeof(ControlFileData))
     {
-
         close(fd);
         pfree(ControlFile);
         ereport(PANIC,
@@ -345,6 +357,9 @@ Datum show_records(PG_FUNCTION_ARGS)
     }
 
     close(fd);
+
+    if (start_ptr != InvalidXLogRecPtr)
+        ControlFile->checkPointCopy.redo = start_ptr;
 
     if (ControlFile->checkPointCopy.redo == ControlFile->checkPoint)
     {
