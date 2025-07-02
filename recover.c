@@ -194,48 +194,12 @@ Datum recover(PG_FUNCTION_ARGS)
             /* Replay non-XLOG records only. We can't handle different timelines at this point */
             if (record->xl_rmid != RM_XLOG_ID)
             {
-                Buffer buf;
                 if (!RmgrIdExists(record->xl_rmid))
                 {
                     elog(WARNING, "Resource manager does not exist for record at: %X/%X", LSN_FORMAT_ARGS(xlogreader->ReadRecPtr));
                     break;
                 }
                 rmgr = RmgrTable[record->xl_rmid];
-
-                /* Page LSN must be less than the XlogRecPtr of the record being
-                 * replayed. It's still not clear how block id is calculated(e.g., is it
-                 * relative to the segment or absolute?) for XLogReadBufferForRedo args.
-                 * For now, we only handle HEAP/HEAP2 records. Other resource managers
-                 * also need some tweaking, but we skip them for now.
-                 */
-                if (record->xl_rmid == RM_HEAP_ID || record->xl_rmid == RM_HEAP2_ID)
-                {
-                    BlockNumber oldblk;
-                    BlockNumber newblk;
-                    XLogRedoAction redo_action;
-                    RelFileLocator rlocator;
-                    Page page;
-
-                    XLogRecGetBlockTag(xlogreader, 0, &rlocator, NULL, &newblk);
-                    if (!XLogRecGetBlockTagExtended(xlogreader, 1, NULL, NULL, &oldblk, NULL))
-                        oldblk = newblk;
-
-                    redo_action = XLogReadBufferForRedo(xlogreader, (oldblk == newblk) ? 0 : 1, &buf);
-                    if (BufferIsValid(buf))
-                    {
-                        page = BufferGetPage(buf);
-                        if (xlogreader->EndRecPtr <= PageGetLSN(page))
-                        {
-                            elog(WARNING, "Page LSN %X/%X is greater than record LSN %X/%X for record at: %X/%X",
-                                 LSN_FORMAT_ARGS(PageGetLSN(page)),
-                                 LSN_FORMAT_ARGS(xlogreader->EndRecPtr),
-                                 LSN_FORMAT_ARGS(xlogreader->ReadRecPtr));
-                            PageSetLSN(page, xlogreader->ReadRecPtr);
-                            MarkBufferDirty(buf);
-                        }
-                    }
-                    UnlockReleaseBuffer(buf);
-                }
 
                 AdvanceNextFullTransactionIdPastXid(record->xl_xid);
 
