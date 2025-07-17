@@ -1,6 +1,6 @@
 # pg_wal_recovery
 
-`pg_wal_recovery` is an educational PostgreSQL extension for database recovery, focusing on restoring databases from Write-Ahead Logs (WAL) and supporting point-in-time recovery.
+`pg_wal_recovery` is an educational PostgreSQL extension for database recovery, focusing on restoring databases from Write-Ahead Logs (WAL) and supporting point-in-time recovery. Check my [post on it here](https://dev.to/misachi/fun-with-postgres-recovery-f5e).
 
 ## Features
 
